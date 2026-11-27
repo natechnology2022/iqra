@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اقرأ معي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Baloo+Bhaijaan+2:wght@500;700;800&family=Noto+Naskh+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout: a desk. The child sees his homework cards, then one school-notebook page with the teacher's
+     line above it. The highlighter strokes on the words are the only loud thing. */
+  --desk:#DCE8F5;
+  --paper:#FBFCFF;
+  --ink:#17254A;
+  --ink-soft:#52608A;
+  --rule:#C9D8EE;
+  --margin:#F2A0A0;
+  --pen:#2F4BD8;
+  --ok:#9BE8B4;
+  --say:#FFE066;
+  --fixed:#A9D4FF;
+  --hard:#FFC98A;
+  --miss:#E5573F;
+  --ui:"Baloo Bhaijaan 2","Noto Naskh Arabic",system-ui,sans-serif;
+  --read-ar:"Noto Naskh Arabic","Geeza Pro","Amiri",serif;
+  --read-lat:"Andika","Comic Neue","Trebuchet MS",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--desk);color:var(--ink);font-family:var(--ui);font-size:17px;line-height:1.5;-webkit-text-size-adjust:100%}
+button,select,textarea,input{font:inherit;color:inherit}
+[hidden]{display:none !important}
+:focus-visible{outline:3px solid var(--pen);outline-offset:3px}
+.wrap{max-width:680px;margin:0 auto;padding:14px 16px 40px;display:flex;flex-direction:column;gap:14px}
+.view{display:flex;flex-direction:column;gap:14px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.who{display:flex;align-items:center;gap:12px;min-width:0}
+.avatar{width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid var(--paper);box-shadow:0 0 0 2px var(--pen);flex:none;background:var(--paper)}
+.brand{font-weight:800;font-size:28px;line-height:1.1;margin:0}
+.brand small{display:block;font-weight:500;font-size:14px;color:var(--ink-soft)}
+.bank{display:flex;align-items:center;gap:6px;background:var(--paper);border-radius:999px;padding:6px 14px 6px 12px;font-weight:800;font-size:20px;font-variant-numeric:tabular-nums}
+.bank svg{width:22px;height:22px;fill:#F5B400}
+
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row .gap{flex:1 1 12px}
+.chip{border:2px solid transparent;background:var(--paper);border-radius:999px;padding:6px 16px;font-weight:700;cursor:pointer;min-height:44px}
+.chip[aria-pressed="true"]{border-color:var(--pen);color:var(--pen)}
+.sec{margin:6px 0 0;font-size:20px;font-weight:800}
+.hint{margin:0;color:var(--ink-soft);font-size:15px;max-width:52ch}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.card{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:start;background:var(--paper);border:2px solid transparent;border-radius:18px;padding:12px 16px;cursor:pointer;min-height:84px}
+.card:hover{border-color:var(--pen)}
+.card .t{font-weight:800;font-size:19px;overflow-wrap:anywhere}
+.card .m{font-size:14px;color:var(--ink-soft);font-weight:700}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 10px;font-size:13px;font-weight:800;background:var(--say)}
+.pill.done{background:var(--ok)}
+.pill.try{background:var(--rule)}
+
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.steps li{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--ink-soft);text-align:center}
+.steps .dot{width:34px;height:34px;border-radius:50%;background:var(--paper);display:grid;place-items:center;font-size:16px;font-variant-numeric:tabular-nums;border:2px solid transparent}
+.steps li.on{color:var(--pen)}
+.steps li.on .dot{border-color:var(--pen);color:var(--pen)}
+.steps li.done .dot{background:var(--ok);color:var(--ink)}
+
+/* the teacher's line: who is talking now, and what was said */
+.teacher{display:flex;align-items:center;gap:12px;background:var(--paper);border-radius:22px;padding:10px 16px;border-inline-start:6px solid var(--pen);min-height:64px}
+.teacher.child{border-inline-start-color:var(--miss)}
+.teacher .dot{width:18px;height:18px;border-radius:50%;background:var(--pen);flex:none;position:relative}
+.teacher.child .dot{background:var(--miss)}
+.teacher.child .dot::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:3px solid var(--miss);opacity:.5;animation:ring 1.4s ease-out infinite}
+@keyframes ring{from{transform:scale(.8);opacity:.6}to{transform:scale(1.35);opacity:0}}
+.teacher .who2{margin:0;font-size:13px;font-weight:800;color:var(--ink-soft)}
+.teacher .line{margin:0;font-size:19px;font-weight:700;overflow-wrap:anywhere}
+
+.paper{--fs:30px;--lh:68px;position:relative;background-color:var(--paper);border-radius:8px 20px 20px 8px;
+  box-shadow:0 12px 26px -16px rgba(23,37,74,.45);padding:14px 18px 26px;padding-inline-start:46px;
+  background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--lh) - 2px),var(--rule) calc(var(--lh) - 2px),var(--rule) var(--lh));
+  background-position:0 14px}
+.paper[dir="ltr"]{--fs:27px;--lh:56px;border-radius:20px 8px 8px 20px}
+.paper::before{content:"";position:absolute;inset-block:0;inset-inline-start:32px;width:2px;background:var(--margin)}
+.paper h2{margin:0;font-family:var(--ui);font-weight:800;font-size:22px;line-height:var(--lh);color:var(--pen)}
+.text{margin:0;font-family:var(--read-ar);font-weight:500;font-size:var(--fs);line-height:var(--lh);overflow-wrap:anywhere}
+.paper[dir="ltr"] .text{font-family:var(--read-lat);font-weight:400}
+.w{display:inline-block;line-height:1.5;padding:0 .16em;border-radius:.28em .12em .3em .14em;
+  background-image:linear-gradient(var(--hl,transparent),var(--hl,transparent));background-repeat:no-repeat;
+  background-size:0% 100%;background-position:100% 50%;transition:background-size .35s ease}
+.paper[dir="ltr"] .w{background-position:0 50%}
+.w.say{--hl:var(--say);background-size:100% 100%}
+.w.ok{--hl:var(--ok);background-size:100% 100%}
+.w.fixed{--hl:var(--fixed);background-size:100% 100%}
+.w.hard{--hl:var(--hard);background-size:100% 100%}
+.w.miss{outline:2px dashed var(--miss);outline-offset:-2px}
+.w.target{outline:3px solid var(--pen);outline-offset:-1px}
+.w.next{box-shadow:inset 0 -5px 0 var(--say)}
+
+.stage{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.heard{margin:0;color:var(--ink-soft);font-size:15px;max-width:100%;overflow-wrap:anywhere}
+.heard b{color:var(--ink);font-weight:700}
+.btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.btn{border:2px solid var(--pen);background:var(--pen);color:#fff;border-radius:16px;padding:10px 22px;font-weight:700;font-size:18px;min-height:52px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--pen)}
+.btn.small{font-size:15px;min-height:44px;padding:6px 14px;border-color:var(--rule);color:var(--ink-soft);background:transparent}
+.btn.danger{border-color:var(--miss);color:var(--miss);background:transparent}
+.btn[disabled]{opacity:.5;cursor:default}
+.bigword{margin:0;font-family:var(--read-ar);font-weight:700;font-size:clamp(44px,15vw,76px);line-height:1.6;overflow-wrap:anywhere}
+.bigword[lang="en"],.bigword[lang="tr"]{font-family:var(--read-lat);line-height:1.3}
+
+.panel{background:var(--paper);border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.panel h2{margin:0;font-size:20px;font-weight:800}
+.panel textarea,.panel input,.panel select{border:2px solid var(--rule);border-radius:12px;padding:8px 10px;background:#fff;min-height:44px}
+.panel textarea{width:100%;min-height:120px;font-size:18px;resize:vertical}
+.panel input.grow{flex:1 1 180px;min-width:0}
+.result{width:100%;text-align:center}
+.result h3{margin:0 0 6px;font-size:26px;font-weight:800}
+.stars{display:flex;justify-content:center;gap:8px;margin:6px 0 10px}
+.stars svg{width:54px;height:54px;fill:var(--rule)}
+.stars svg.won{fill:#F5B400}
+dl.facts{margin:0;display:grid;grid-template-columns:1fr auto;gap:4px 16px;text-align:start;font-size:17px}
+dl.facts dt{color:var(--ink-soft)}
+dl.facts dd{margin:0;font-weight:800;font-variant-numeric:tabular-nums}
+
+details.sess{border-top:2px solid var(--rule);padding:8px 0}
+details.sess summary{cursor:pointer;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-weight:800;min-height:44px}
+details.sess summary .when{font-weight:500;color:var(--ink-soft);font-size:14px;font-variant-numeric:tabular-nums}
+details.sess h4{margin:10px 0 2px;font-size:15px;color:var(--pen);font-weight:800}
+details.sess p,details.sess li{margin:0;font-size:16px;overflow-wrap:anywhere}
+details.sess ul{margin:0;padding-inline-start:20px}
+details.sess .said{color:var(--ink-soft);font-size:15px}
+details.sess a{color:var(--pen);font-weight:800}
+.tasksmini{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.tasksmini li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-weight:700}
+
+@media (max-width:420px){
+  .paper{--fs:27px;--lh:62px;padding-inline-start:38px;padding-inline-end:12px}
+  .paper[dir="ltr"]{--fs:24px;--lh:52px}
+  .paper::before{inset-inline-start:26px}
+  .brand{font-size:24px}
+}
+@media (prefers-reduced-motion:reduce){
+  .w{transition:none}
+  .teacher.child .dot::after{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="who">
+      <img class="avatar" id="avatar" alt="صورة عبدالله" width="60" height="60" hidden>
+      <h1 class="brand">اقرأ معي<small>دفتر عبدالله</small></h1>
+    </div>
+    <div class="bank" title="مجموع النجوم">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17.4 6.1 20.7l1.3-6.6L2.5 9.5l6.6-.8z"/></svg>
+      <span id="bankCount">0</span>
+    </div>
+  </header>
+
+  <nav class="row" id="tabs" aria-label="الأقسام">
+    <button class="chip" id="tab-home" type="button">وظائف عبدالله</button>
+    <button class="chip" id="tab-parent" type="button">للأهل</button>
+  </nav>
+
+  <div class="view" id="pairView" hidden>
+    <section class="panel">
+      <h2>ربط هذا الجهاز</h2>
+      <p class="hint">مرة واحدة فقط: يكتب الأهل رقمهم ليعمل التطبيق على هذا الجهاز. بعدها يفتحه عبدالله مباشرة.</p>
+      <div class="row">
+        <label for="pairName">اسم الجهاز</label>
+        <input class="grow" type="text" id="pairName" value="هاتف عبدالله">
+      </div>
+      <div class="row">
+        <label for="pairPin">رقم الأهل</label>
+        <input class="grow" type="password" inputmode="numeric" id="pairPin" autocomplete="off">
+        <button class="btn" id="pairGo" type="button">اربط الجهاز</button>
+      </div>
+      <p class="hint" id="pairMsg" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <div class="view" id="homeView">
+    <p class="hint" id="homeMsg"></p>
+    <h2 class="sec">وظائفي</h2>
+    <div class="cards" id="taskList"></div>
+    <h2 class="sec">نصوص للتجربة</h2>
+    <div class="cards" id="sampleList"></div>
+  </div>
+
+  <div class="view" id="lessonView" hidden>
+    <ol class="steps" id="steps" aria-label="خطوات الدرس">
+      <li><span class="dot">1</span>استمع</li>
+      <li><span class="dot">2</span>كلمة كلمة</li>
+      <li><span class="dot">3</span>جملة جملة</li>
+      <li><span class="dot">4</span>النص كاملاً</li>
+    </ol>
+    <div class="teacher" id="teacher" aria-live="polite">
+      <span class="dot" aria-hidden="true"></span>
+      <div>
+        <p class="who2" id="turnLabel">المعلّم</p>
+        <p class="line" id="coach" dir="auto"></p>
+      </div>
+    </div>
+    <section class="paper" id="paper" dir="rtl" lang="ar" aria-label="نص الوظيفة">
+      <h2 id="paperTitle"></h2>
+      <p class="text" id="text"></p>
+    </section>
+    <section class="stage" id="stage"></section>
+  </div>
+
+  <div class="view" id="parentView" hidden>
+    <section class="panel" id="pinPanel">
+      <h2>قسم الأهل</h2>
+      <div class="row">
+        <label for="pinIn">رقم الأهل</label>
+        <input class="grow" type="password" inputmode="numeric" id="pinIn" autocomplete="off">
+        <button class="btn" id="pinGo" type="button">ادخل</button>
+      </div>
+      <p class="hint" id="pinMsg" aria-live="polite"></p>
+    </section>
+
+    <div class="view" id="parentBody" hidden>
+      <section class="panel">
+        <h2>وظيفة جديدة</h2>
+        <div class="row">
+          <label for="ownLang">لغة النص</label>
+          <select id="ownLang">
+            <option value="ar">العربية</option>
+            <option value="en">English</option>
+            <option value="tr">Türkçe</option>
+          </select>
+          <input class="grow" type="text" id="ownTitle" placeholder="عنوان الوظيفة" aria-label="عنوان الوظيفة">
+        </div>
+        <label for="ownText">النص (حتى 100 كلمة). في العربية اكتبه مشكولاً إن أمكن.</label>
+        <textarea id="ownText" dir="auto"></textarea>
+        <p class="hint" id="ownMsg" aria-live="polite"></p>
+        <div class="row">
+          <button class="btn" id="ownSend" type="button">أضف الوظيفة</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>الوظائف</h2>
+        <ul class="tasksmini" id="taskMini"></ul>
+      </section>
+
+      <section class="panel">
+        <h2>الأجهزة المربوطة</h2>
+        <p class="hint">ألغِ أي جهاز لم يعد يُستخدم، مثلاً إذا ضاع الهاتف.</p>
+        <ul class="tasksmini" id="deviceList"></ul>
+      </section>
+
+      <section class="panel">
+        <h2>ما فعله عبدالله</h2>
+        <p class="hint">لكل درس: الكلمات والجمل التي تعثّر فيها، نص ما سمعه التطبيق، ورابط تسجيل قراءته الأخيرة.</p>
+        <div class="row"><button class="btn small" id="logRefresh" type="button">حدّث السجل</button></div>
+        <p class="hint" id="logMsg" aria-live="polite"></p>
+        <div id="sessionList"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- settings ---------- */
+var CHILD = "عبدالله";
+var MAX_WORDS = 100, MAX_TRIES = 3;
+var LOCALE = { ar: "ar-SA", en: "en-US", tr: "tr-TR" };
+var LANG_OWN = { ar: "العربية", en: "English", tr: "Türkçe" };
+var STEP_AR = { listen: "الاستماع", words: "كلمة كلمة", sents: "جملة جملة", full: "النص كاملاً", rec: "التسجيل", done: "النهاية" };
+var SAMPLES = [
+  { key: "s-ar", lang: "ar", title: "القطة الصغيرة",
+    text: "ذَهَبَ سَلِيمٌ إِلَى الْحَدِيقَةِ فِي الصَّبَاحِ. رَأَى قِطَّةً صَغِيرَةً تَحْتَ الشَّجَرَةِ. أَعْطَاهَا قَلِيلًا مِنَ الْحَلِيبِ. فَرِحَتِ الْقِطَّةُ وَلَعِبَتْ مَعَهُ." },
+  { key: "s-en", lang: "en", title: "The Red Kite",
+    text: "Sam has a red kite. He runs up the hill with his sister. The wind is strong today. The kite flies high in the blue sky." },
+  { key: "s-tr", lang: "tr", title: "Küçük Kuş",
+    text: "Ali sabah erken kalktı. Bahçede küçük bir kuş gördü. Kuşa biraz ekmek verdi. Kuş ekmeği yedi ve gökyüzüne uçtu." }
+];
+/* what the teacher says (always in Arabic; the text itself is read in its own language) */
+var PH = {
+  hello: "مرحباً يا " + CHILD + ". اسمع النص جيداً، وتابع الكلمات بعينك.",
+  words: "الآن كرّر ورائي كلمة كلمة. أنا أقول الكلمة، وأنت تعيدها.",
+  again: "قريب. اسمع مرة ثانية، ثم أعد.",
+  silent: "لم أسمعك. قلها بصوت أعلى.",
+  later: "لا بأس. سنراجع هذه الكلمة لاحقاً.",
+  sents: "أحسنت. الآن جملة جملة. اسمع الجملة، ثم أعدها.",
+  againS: "أعد الجملة مرة ثانية. اسمعها أولاً.",
+  laterS: "لا بأس. نكمل، وسنعود إليها.",
+  full1: "ممتاز. الآن أقرأ لك النص كله، ثم تقرؤه أنت.",
+  full2: "دورك. اقرأ النص كله.",
+  fix: "بقيت كلمات قليلة. كرّرها ورائي ليكتمل النص.",
+  rec: "رائع. الآن اقرأ النص مرة أخيرة، وأنا أسجّل صوتك لأهلك.",
+  done: "أحسنت يا " + CHILD + ". أنهيت الوظيفة."
+};
+
+/* ---------- word matching (pure functions) ---------- */
+function norm(s, lang) {
+  s = String(s).toLocaleLowerCase(lang === "tr" ? "tr" : "en");
+  s = s.normalize("NFKD").replace(/ـ/g, "").replace(/[^\p{L}\p{N}]/gu, "");
+  if (lang === "tr") s = s.replace(/ı/g, "i");
+  if (lang === "ar") s = s.replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/ٱ/g, "ا");
+  return s;
+}
+function lev(a, b) {
+  if (a === b) return 0;
+  var m = a.length, n = b.length, i, j;
+  if (!m) return n; if (!n) return m;
+  var prev = [], cur = [];
+  for (j = 0; j <= n; j++) prev[j] = j;
+  for (i = 1; i <= m; i++) {
+    cur = [i];
+    for (j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[n];
+}
+function same(spoken, target) {
+  if (spoken === target) return true;
+  var L = target.length, tol = L <= 3 ? 0 : (L <= 5 ? 1 : 2);
+  return tol > 0 && lev(spoken, target) <= tol;
+}
+function tokens(text, lang) {
+  return String(text || "").trim().split(/\s+/).map(function (t) { return norm(t, lang); }).filter(Boolean);
+}
+/* Reading a run of words: a word the child got wrong is passed over (stays uncoloured)
+   as soon as he says one of the words after it. */
+function align(toks, words, st) {
+  var i = 0;
+  while (i < toks.length && st.ptr < words.length) {
+    var s = toks[i];
+    if (same(s, words[st.ptr].norm)) { st.status[st.ptr] = "ok"; st.ptr++; i++; continue; }
+    for (var k = 1; k <= 8 && st.ptr + k < words.length; k++) {
+      var t = words[st.ptr + k].norm;
+      if (!same(s, t)) continue;
+      var pair = i + 1 < toks.length && st.ptr + k + 1 < words.length && same(toks[i + 1], words[st.ptr + k + 1].norm);
+      if ((k <= 2 && (t.length >= 3 || pair)) || (k > 2 && pair)) {
+        st.status[st.ptr + k] = "ok";
+        st.ptr += k + 1;
+        break;
+      }
+    }
+    i++;
+  }
+}
+function okCount(st) { return st.status.filter(function (x) { return x === "ok"; }).length; }
+/* the text cut into sentences; a long sentence is also cut at its commas */
+function sentences(words) {
+  var out = [], a = 0;
+  words.forEach(function (w, i) {
+    var strong = /[.!?؟…:]["»”')\]]*$/.test(w.raw), weak = /[،,;؛]$/.test(w.raw);
+    if (strong || i === words.length - 1 || (weak && i + 1 - a >= 5)) { out.push({ a: a, b: i + 1 }); a = i + 1; }
+  });
+  return out;
+}
+
+/* ---------- small helpers ---------- */
+var $ = function (id) { return document.getElementById(id); };
+function noop() {}
+function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function el(tag, props, kids) {
+  var n = document.createElement(tag), k;
+  for (k in (props || {})) {
+    if (k === "text") n.textContent = props[k];
+    else if (k === "on") n.addEventListener("click", props[k]);
+    else n.setAttribute(k, props[k]);
+  }
+  (kids || []).forEach(function (c) { if (c) n.appendChild(c); });
+  return n;
+}
+function when(ts) {
+  try { return new Date(ts).toLocaleString("ar-u-nu-latn", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }); }
+  catch (e) { return ""; }
+}
+var STAR = "M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17.4 6.1 20.7l1.3-6.6L2.5 9.5l6.6-.8z";
+function svg(path, cls) {
+  var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("aria-hidden", "true");
+  if (cls) s.setAttribute("class", cls);
+  var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  p.setAttribute("d", path); s.appendChild(p);
+  return s;
+}
+
+/* ---------- the server: Google Apps Script, reached over the web; this device alone if it is not set ---------- */
+var API_URL = "https://script.google.com/macros/s/AKfycbx03dgxL-Wd7TzSMosKow1a8dzzqY_8ZqYIrt0cOEbVwcY68nV2NH5QvtCkgJwBkEc/exec";
+/* This page holds no secret. Each device is paired once with the parents' number and keeps its own token. */
+var TOKEN = "";
+try { TOKEN = localStorage.getItem("iqra-token") || ""; } catch (e) {}
+function api(name) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  if (!API_URL) return new Promise(function (res, rej) { try { res(localApi(name, args)); } catch (e) { rej(e); } });
+  return fetch(API_URL, { method: "POST", body: JSON.stringify({ token: TOKEN, fn: name, args: args }) })
+    .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+    .then(function (j) {
+      if (!j || !j.ok) {
+        var code = (j && j.error) || "server";
+        if (code === "unpaired" && name !== "pair") unpair();
+        throw new Error(code);
+      }
+      return j.data;
+    });
+}
+function errText(e) {
+  var c = e && e.message;
+  return c === "badpin" ? "الرقم غير صحيح." :
+         c === "locked" ? "محاولات خاطئة كثيرة. انتظر 15 دقيقة ثم حاول." :
+         c === "unpaired" ? "هذا الجهاز غير مربوط." : "لم أصل إلى الخادم. تأكد من الاتصال بالإنترنت.";
+}
+function unpair() {
+  TOKEN = "";
+  try { localStorage.removeItem("iqra-token"); } catch (e) {}
+  if (VIEW !== "pair") show("pair");
+}
+function lsGet(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function localApi(name, a) {
+  var tasks = lsGet("iqra-tasks", []), sess = lsGet("iqra-sess", []);
+  if (name === "pair") return { token: "local-device-token-0000000000000000" };
+  if (name === "apiDevices") return [{ id: "dev_local", name: "هذا الجهاز", created: Date.now() }];
+  if (name === "apiRevoke") return true;
+  if (name === "apiHome") {
+    var st = 0; sess.forEach(function (s) { if (s.status === "done") st += s.stars || 0; });
+    return { tasks: tasks, stars: st };
+  }
+  if (name === "apiAddTask") { a[1].id = "t" + Date.now(); a[1].createdAt = Date.now(); a[1].done = false; tasks.push(a[1]); lsSet("iqra-tasks", tasks); return { ok: true }; }
+  if (name === "apiDeleteTask") { lsSet("iqra-tasks", tasks.filter(function (t) { return t.id !== a[1]; })); return { ok: true }; }
+  if (name === "apiSaveSession") {
+    var x = a[0], i = sess.findIndex(function (s) { return s.id === x.id; });
+    x.updatedAt = Date.now(); if (i >= 0) { x.recording = sess[i].recording || ""; sess[i] = x; } else sess.push(x);
+    lsSet("iqra-sess", sess.slice(-60));
+    if (x.status === "done" && x.taskId) { tasks.forEach(function (t) { if (t.id === x.taskId) { t.done = true; t.stars = x.stars; } }); lsSet("iqra-tasks", tasks); }
+    return { ok: true };
+  }
+  if (name === "apiSaveRecording") return { ok: false };
+  if (name === "apiLog") return { ok: true, tasks: tasks, sessions: sess.slice().reverse(), devices: [{ id: "dev_local", name: "هذا الجهاز", created: Date.now() }] };
+  return { ok: false };
+}
+
+/* ---------- voice out: the device's own voice ---------- */
+var VOICES = [], UTT = null;
+function loadVoices() { try { VOICES = window.speechSynthesis.getVoices() || []; } catch (e) { VOICES = []; } }
+if ("speechSynthesis" in window) { loadVoices(); try { window.speechSynthesis.onvoiceschanged = loadVoices; } catch (e) {} }
+function pickVoice(lang) {
+  var want = LOCALE[lang].toLowerCase(), pre = lang + "-", best = null;
+  VOICES.forEach(function (v) {
+    var l = String(v.lang || "").toLowerCase().replace("_", "-");
+    if (l === want) best = best || v;
+  });
+  if (!best) VOICES.forEach(function (v) {
+    var l = String(v.lang || "").toLowerCase().replace("_", "-");
+    if (!best && (l === lang || l.indexOf(pre) === 0)) best = v;
+  });
+  return best;
+}
+function speak(text, lang, rate) {
+  return new Promise(function (res) {
+    text = String(text || "").trim();
+    if (!text || !("speechSynthesis" in window)) { res(); return; }
+    var u = new SpeechSynthesisUtterance(text), done = false, r = rate || 0.9;
+    u.lang = LOCALE[lang]; u.rate = r;
+    var v = pickVoice(lang); if (v) u.voice = v;
+    var fin = function () { if (done) return; done = true; clearTimeout(t); UTT = null; res(); };
+    u.onend = fin; u.onerror = fin;
+    var t = setTimeout(fin, 2500 + text.length * 150 / r);   // some phones never report the end
+    UTT = u;                                                  // keep it alive until it has been spoken
+    setTurn("teacher");
+    try { window.speechSynthesis.speak(u); } catch (e) { fin(); }
+  });
+}
+function hush() { try { window.speechSynthesis.cancel(); } catch (e) {} }
+var ACX = null;
+function ding() {
+  try {
+    ACX = ACX || new (window.AudioContext || window.webkitAudioContext)();
+    var o = ACX.createOscillator(), g = ACX.createGain();
+    o.frequency.value = 880; g.gain.value = 0.08;
+    o.connect(g); g.connect(ACX.destination);
+    o.start(); o.stop(ACX.currentTime + 0.12);
+  } catch (e) {}
+}
+
+/* ---------- voice in: the browser's speech recognition ---------- */
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+var REC = null;
+function listenOnce(lang, onText, maxMs) {
+  return new Promise(function (res, rej) {
+    var rec;
+    try { rec = new SR(); } catch (e) { rej({ fatal: true, code: "no-sr" }); return; }
+    rec.lang = LOCALE[lang]; rec.interimResults = true; rec.maxAlternatives = 3; rec.continuous = false;
+    var last = "", alts = [], done = false, timer = null, err = null;
+    var fin = function () {
+      if (done) return; done = true; clearTimeout(timer); if (REC === rec) REC = null;
+      if (err) rej(err); else res({ text: last, alts: alts.length ? alts : [last] });
+    };
+    rec.onresult = function (ev) {
+      var parts = [], i;
+      for (i = 0; i < ev.results.length; i++) parts.push(ev.results[i][0].transcript);
+      last = parts.join(" ").trim();
+      alts = [last];
+      var r = ev.results[ev.results.length - 1], head = parts.slice(0, -1).join(" ");
+      if (r && r.isFinal) for (i = 1; i < r.length; i++) alts.push((head + " " + r[i].transcript).trim());
+      if (onText) onText(last);
+    };
+    rec.onerror = function (ev) {
+      var c = ev && ev.error;
+      if (c === "not-allowed" || c === "service-not-allowed" || c === "audio-capture" || c === "network") err = { fatal: true, code: c };
+    };
+    rec.onend = fin;
+    timer = setTimeout(function () { try { rec.stop(); } catch (e) {} setTimeout(fin, 1200); }, maxMs || 9000);
+    REC = rec;
+    setTurn("child");
+    try { rec.start(); } catch (e) { fin(); }
+  });
+}
+function deaf() { try { if (REC) REC.abort(); } catch (e) {} REC = null; }
+
+/* ---------- state ---------- */
+var VIEW = "home", HOME = null, HOMEERR = false, PIN = "", LOG = null;
+var OPEN = {};
+var S = null;          // the lesson in hand
+var RUN = 0;           // changes whenever the running lesson must stop
+var STOP = { stop: true };
+function check(r) { if (r !== RUN || VIEW !== "lesson") throw STOP; }
+
+/* ---------- views ---------- */
+function show(view) {
+  if (VIEW === "lesson" && view !== "lesson") stopLesson(true);
+  if (API_URL && !TOKEN && view !== "pair") view = "pair";
+  VIEW = view;
+  $("pairView").hidden = view !== "pair";
+  $("tabs").hidden = view === "pair";
+  $("homeView").hidden = view !== "home";
+  $("lessonView").hidden = view !== "lesson";
+  $("parentView").hidden = view !== "parent";
+  $("tab-home").setAttribute("aria-pressed", String(view !== "parent"));
+  $("tab-parent").setAttribute("aria-pressed", String(view === "parent"));
+  if (view === "home") loadHome();
+  if (view === "parent") renderParent();
+}
+function taskCard(t, sample) {
+  var pill = sample ? el("span", { "class": "pill try", text: "تجربة" }) :
+    (t.done ? el("span", { "class": "pill done", text: "تمّت" + (t.stars ? " · " + t.stars + " نجوم" : "") }) : el("span", { "class": "pill", text: "عليك أن تقرأها" }));
+  return el("button", { "class": "card", type: "button", on: function () { openTask(t, sample); } }, [
+    el("span", { "class": "t", dir: "auto", text: t.title || "نص" }),
+    el("span", { "class": "m", text: LANG_OWN[t.lang] || "" }),
+    pill
+  ]);
+}
+function renderHome() {
+  var list = $("taskList"); list.textContent = "";
+  var tasks = (HOME && HOME.tasks) || [];
+  var todo = tasks.filter(function (t) { return !t.done; }), done = tasks.filter(function (t) { return t.done; });
+  todo.concat(done.slice(-6).reverse()).forEach(function (t) { list.appendChild(taskCard(t, false)); });
+  $("bankCount").textContent = String((HOME && HOME.stars) || 0);
+  var msg = "";
+  if (!SR) msg = "هذا المتصفح لا يسمع الكلام. افتح الرابط في متصفح Chrome.";
+  else if (HOMEERR) msg = "لم أصل إلى الوظائف. تأكد من الاتصال بالإنترنت.";
+  else if (!HOME) msg = "أحمّل الوظائف…";
+  else if (!todo.length) msg = tasks.length ? "أنهيت كل وظائفك. أحسنت." : "لا توجد وظائف بعد. يضيفها الأهل من قسم «للأهل».";
+  else msg = "اختر وظيفة ليبدأ المعلّم.";
+  $("homeMsg").textContent = msg;
+  var sl = $("sampleList");
+  if (!sl.firstChild) SAMPLES.forEach(function (t) { sl.appendChild(taskCard(t, true)); });
+}
+function setAvatar(src) {
+  var im = $("avatar");
+  if (src && /^data:image\//.test(src) && im.getAttribute("src") !== src) { im.setAttribute("src", src); im.hidden = false; }
+}
+function loadHome() {
+  renderHome();
+  api("apiHome").then(function (h) { HOME = h || { tasks: [], stars: 0 }; HOMEERR = false; setAvatar(HOME.avatar); if (VIEW === "home") renderHome(); },
+    function (e) { HOMEERR = true; if (VIEW === "home") renderHome(); });
+}
+
+/* ---------- a lesson ---------- */
+function openTask(t, sample) {
+  if (!SR) { $("homeMsg").textContent = "هذا المتصفح لا يسمع الكلام. افتح الرابط في متصفح Chrome."; return; }
+  var lang = t.lang === "en" || t.lang === "tr" ? t.lang : "ar";
+  var words = [];
+  String(t.text || "").trim().split(/\s+/).forEach(function (r) {
+    var n = norm(r, lang);
+    if (!n) { if (words.length) words[words.length - 1].raw += " " + r; return; }
+    if (words.length < MAX_WORDS) words.push({ raw: r, norm: n });
+  });
+  if (!words.length) return;
+  var now = Date.now();
+  S = {
+    id: "s" + now.toString(36) + Math.floor(Math.random() * 1296).toString(36),
+    taskId: sample ? "" : (t.id || ""), sample: !!sample, lang: lang, title: t.title || "نص",
+    words: words, sents: sentences(words), startedAt: now,
+    step: 0, wi: 0, si: 0, fullRead: false, fi: 0, fixQ: [],
+    status: words.map(function () { return "todo"; }),
+    target: -1, sayA: -1, sayB: -1, next: -1, turn: "teacher", coach: "", heard: "", paused: false, stars: 0,
+    tries: {}, heardW: {}, hard: {}, log: { heard: { words: "", sents: "", full: "" } }, saving: ""
+  };
+  var paper = $("paper"), p = $("text");
+  paper.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+  paper.setAttribute("lang", lang);
+  $("paperTitle").textContent = S.title;
+  p.textContent = "";
+  S.spans = words.map(function (w, i) {
+    var sp = el("span", { "class": "w", "data-i": i, text: w.raw });
+    p.appendChild(sp); p.appendChild(document.createTextNode(" "));
+    return sp;
+  });
+  show("lesson");
+  keepAwake();
+  save();
+  go();                                   // runs straight from the tap on the card, so the voice may start
+}
+var WAKE = null;
+function keepAwake() { try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (w) { WAKE = w; }, noop); } catch (e) {} }
+function go() {
+  S.paused = false;
+  var r = ++RUN;
+  render();
+  runLesson(r).catch(function (e) {
+    if (e === STOP || r !== RUN) return;
+    var code = e && e.code;
+    pause(code === "not-allowed" || code === "service-not-allowed" ? "اسمح للصفحة باستخدام الميكروفون، ثم اضغط «تابع»." :
+          code === "audio-capture" ? "لم أجد ميكروفوناً. تأكد منه ثم اضغط «تابع»." :
+          code === "network" ? "انقطع الاتصال بالإنترنت. اضغط «تابع» عندما يعود." :
+          "توقف الدرس. اضغط «تابع».");
+  });
+}
+function pause(msg) {
+  RUN++; hush(); deaf();
+  if (!S) return;
+  S.paused = true; S.target = -1; S.sayA = S.sayB = -1; S.next = -1;
+  S.coach = msg || "الدرس متوقف. اضغط «تابع» لنكمل من حيث وقفنا.";
+  setTurn("teacher");
+  render();
+}
+function stopLesson(saveIt) {
+  RUN++; hush(); deaf();
+  try { if (WAKE) WAKE.release(); } catch (e) {} WAKE = null;
+  if (S && saveIt && S.step < 5) save();
+}
+function setTurn(t) {
+  if (!S) return;
+  S.turn = t;
+  var box = $("teacher");
+  box.className = "teacher" + (t === "child" || t === "rec" ? " child" : "");
+  $("turnLabel").textContent = t === "child" ? "دورك يا " + CHILD + "، أسمعك" : (t === "rec" ? "أسجّل صوتك" : "المعلّم");
+}
+function paint() {
+  if (!S) return;
+  S.spans.forEach(function (sp, i) {
+    var st = S.status[i], c = "w";
+    if (i >= S.sayA && i < S.sayB) c += " say";
+    if (st === "ok") c += " ok";
+    if (st === "fixed") c += " fixed";
+    if (st === "hard") c += " hard";
+    if (st === "miss") c += " miss";
+    if (i === S.next) c += " next";
+    if (i === S.target) c += " target";
+    sp.className = c;
+  });
+  $("coach").textContent = S.coach;
+  var h = $("heardText"); if (h) h.textContent = S.heard || "…";
+}
+function render() {
+  if (!S || VIEW !== "lesson") return;
+  var at = S.step <= 0 ? 0 : (S.step === 1 ? 1 : (S.step === 2 ? 2 : 3));
+  Array.prototype.forEach.call($("steps").children, function (li, i) {
+    li.className = S.step >= 5 || i < at ? "done" : (i === at ? "on" : "");
+  });
+  var st = $("stage"), kids = [];
+  if (S.step < 5) {
+    if (S.target >= 0) kids.push(el("p", { "class": "bigword", lang: S.lang, dir: S.lang === "ar" ? "rtl" : "ltr", text: S.words[S.target].raw }));
+    kids.push(el("p", { "class": "heard" }, [document.createTextNode("سمعت: "), el("b", { id: "heardText", dir: "auto", text: S.heard || "…" })]));
+    if (S.saving) kids.push(el("p", { "class": "hint", text: S.saving }));
+    var bs = [];
+    if (S.paused) bs.push(el("button", { "class": "btn", id: "resumeBtn", type: "button", text: "تابع", on: go }));
+    else if (S.turn === "rec") bs.push(el("button", { "class": "btn", id: "recDone", type: "button", text: "انتهيت من القراءة", on: function () { S.recDone = true; } }));
+    else bs.push(el("button", { "class": "btn small", id: "pauseBtn", type: "button", text: "أوقف الدرس قليلاً", on: function () { pause(); } }));
+    bs.push(el("button", { "class": "btn small", id: "backBtn", type: "button", text: "رجوع إلى الوظائف", on: function () { show("home"); } }));
+    kids.push(el("div", { "class": "btns" }, bs));
+  } else {
+    var n = S.words.length, row = el("div", { "class": "stars", role: "img", "aria-label": S.stars + " من 3 نجوم" });
+    for (var i = 1; i <= 3; i++) row.appendChild(svg(STAR, i <= S.stars ? "won" : ""));
+    kids.push(el("div", { "class": "panel result" }, [
+      el("h3", { text: "أحسنت يا " + CHILD + "، أنهيت الوظيفة" }), row,
+      el("dl", { "class": "facts" }, [
+        el("dt", { text: "كلمة كلمة: صحيحة من أول مرة" }), el("dd", { text: S.log.words.first + " من " + n }),
+        el("dt", { text: "جملة جملة: صحيحة من أول مرة" }), el("dd", { text: S.log.sents.first + " من " + S.sents.length }),
+        el("dt", { text: "النص كاملاً: كلمات قرأتها وحدك" }), el("dd", { text: S.log.full.ok + " من " + n })
+      ]),
+      S.saving ? el("p", { "class": "hint", text: S.saving }) : null
+    ]));
+    kids.push(el("div", { "class": "btns" }, [el("button", { "class": "btn", id: "homeBtn", type: "button", text: "رجوع إلى الوظائف", on: function () { show("home"); } })]));
+  }
+  st.textContent = "";
+  kids.forEach(function (k) { st.appendChild(k); });
+  paint();
+}
+function resetStatus() { S.status = S.words.map(function () { return "todo"; }); S.target = -1; S.next = -1; S.sayA = S.sayB = -1; }
+function heardLog(key, text) {
+  if (!text) return;
+  var h = S.log.heard; h[key] = (h[key] ? h[key] + " | " : "") + text.trim();
+  if (h[key].length > 1500) h[key] = h[key].slice(0, 1500);
+}
+function rawOf(a, b) { return S.words.slice(a, b).map(function (w) { return w.raw; }).join(" "); }
+
+/* the teacher says something to the child */
+async function teach(r, msg) {
+  S.coach = msg; paint();
+  await speak(msg, "ar", 0.95);
+  check(r);
+}
+async function hear(r, onText, maxMs) {
+  await wait(250);                         // let the teacher's last sound die away
+  check(r);
+  S.heard = ""; paint();
+  var h = await listenOnce(S.lang, function (t) { S.heard = t; if (onText) onText(t); else paint(); }, maxMs);
+  check(r);
+  setTurn("teacher");
+  return h;
+}
+/* the teacher reads a run of words while they are marked on the page */
+async function readAloud(r, a, b, rate) {
+  S.sayA = a; S.sayB = b; paint();
+  await speak(rawOf(a, b), S.lang, rate);
+  S.sayA = S.sayB = -1; paint();
+  check(r);
+}
+
+/* one word: the teacher says it, the child repeats it; three tries, then it is left for the parents */
+async function wordTurn(r, i, key) {
+  for (var a = 1; a <= MAX_TRIES; a++) {
+    S.target = i; S.coach = a === 1 ? "اسمع، ثم أعد." : S.coach; render();
+    await speak(S.words[i].raw, S.lang, 0.7); check(r);
+    var h = await hear(r, null, 7000);
+    heardLog(key, h.text);
+    var hit = h.alts.some(function (t) { return tokens(t, S.lang).some(function (x) { return same(x, S.words[i].norm); }); });
+    if (hit) { S.status[i] = S.tries[i] ? "fixed" : "ok"; S.target = -1; ding(); render(); return true; }
+    S.tries[i] = (S.tries[i] || 0) + 1;
+    (S.heardW[i] = S.heardW[i] || []).push(h.text ? h.text.slice(0, 60) : "(لم يتكلم)");
+    if (a < MAX_TRIES) await teach(r, h.text ? PH.again : PH.silent);
+  }
+  S.hard[i] = true; S.status[i] = "hard"; S.target = -1; render();
+  await teach(r, PH.later);
+  return false;
+}
+function wordsLog(list) {
+  var out = [], first = 0;
+  list.forEach(function (i) {
+    if (!S.tries[i]) { first++; return; }
+    out.push({ w: S.words[i].raw, tries: S.tries[i], heard: (S.heardW[i] || []).slice(0, 3), hard: !!S.hard[i] });
+  });
+  return { first: first, list: out };
+}
+/* the child reads words a..b on his own; the page follows him word by word */
+async function readRange(r, a, b) {
+  var words = S.words.slice(a, b), st = { ptr: 0, status: words.map(function () { return "todo"; }) };
+  var put = function (t) {
+    for (var j = 0; j < words.length; j++) S.status[a + j] = t.status[j] === "ok" ? "ok" : "todo";
+    S.next = t.ptr < words.length ? a + t.ptr : -1;
+  };
+  var idle = 0, rounds = 0, key = S.step === 2 ? "sents" : "full";
+  while (st.ptr < words.length && rounds < 8 && idle < 2) {
+    var base = { ptr: st.ptr, status: st.status.slice() };
+    put(base); paint();
+    var h = await hear(r, function (text) {
+      var t = { ptr: base.ptr, status: base.status.slice() };
+      align(tokens(text, S.lang), words, t); put(t); paint();
+    }, 6000 + 900 * (words.length - st.ptr));
+    heardLog(key, h.text);
+    var best = base;
+    h.alts.forEach(function (alt) {
+      var t = { ptr: base.ptr, status: base.status.slice() };
+      align(tokens(alt, S.lang), words, t);
+      if (okCount(t) > okCount(best) || (okCount(t) === okCount(best) && t.ptr > best.ptr)) best = t;
+    });
+    st = best; put(st); paint(); rounds++;
+    if (!h.text) break;                    // silence: he has stopped
+    idle = okCount(best) > okCount(base) ? 0 : idle + 1;
+    if (words.length - st.ptr <= 2 && idle) break;
+  }
+  S.next = -1; paint();
+  return okCount(st);
+}
+async function sentenceTurn(r, si) {
+  var a = S.sents[si].a, b = S.sents[si].b, need = Math.ceil((b - a) * 0.8), got = 0;
+  for (var t = 1; t <= MAX_TRIES; t++) {
+    for (var j = a; j < b; j++) S.status[j] = "todo";
+    S.coach = "اسمع الجملة، ثم أعدها."; paint();
+    await readAloud(r, a, b, 0.85);
+    got = await readRange(r, a, b);
+    if (got >= need) { ding(); return { tries: t, ok: got, n: b - a }; }
+    if (t < MAX_TRIES) await teach(r, PH.againS);
+  }
+  await teach(r, PH.laterS);
+  return { tries: MAX_TRIES + 1, ok: got, n: b - a };
+}
+
+/* ---------- the whole lesson, start to end, with no buttons ---------- */
+async function runLesson(r) {
+  var n = S.words.length, i;
+  if (S.step === 0) {
+    resetStatus(); render();
+    await teach(r, PH.hello);
+    for (i = 0; i < S.sents.length; i++) await readAloud(r, S.sents[i].a, S.sents[i].b, 0.85);
+    S.step = 1; S.wi = 0; S.tries = {}; S.heardW = {}; S.hard = {}; resetStatus();
+  }
+  if (S.step === 1) {
+    render();
+    await teach(r, PH.words);
+    for (; S.wi < n; S.wi++) await wordTurn(r, S.wi, "words");
+    S.log.words = wordsLog(S.words.map(function (w, k) { return k; }));
+    S.step = 2; S.si = 0; S.sentRes = []; resetStatus(); save();
+  }
+  if (S.step === 2) {
+    render();
+    await teach(r, PH.sents);
+    for (; S.si < S.sents.length; S.si++) S.sentRes[S.si] = await sentenceTurn(r, S.si);
+    S.log.sents = {
+      first: S.sentRes.filter(function (x) { return x.tries === 1; }).length,
+      list: S.sentRes.map(function (x, k) { return x.tries > 1 ? { s: rawOf(S.sents[k].a, S.sents[k].b), tries: Math.min(x.tries, MAX_TRIES), passed: x.tries <= MAX_TRIES, ok: x.ok, n: x.n } : null; }).filter(Boolean)
+    };
+    S.step = 3; S.fullRead = false; resetStatus(); save();
+  }
+  if (S.step === 3) {
+    render();
+    if (!S.fullRead) {
+      resetStatus();
+      await teach(r, PH.full1);
+      for (i = 0; i < S.sents.length; i++) await readAloud(r, S.sents[i].a, S.sents[i].b, 0.9);
+      await teach(r, PH.full2);
+      S.coach = "اقرأ النص كله. كل كلمة صحيحة تتلوّن."; paint();
+      var got = await readRange(r, 0, n);
+      S.fixQ = [];
+      S.status = S.status.map(function (x, k) { if (x === "ok") return "ok"; S.fixQ.push(k); return "miss"; });
+      S.log.full = { ok: got, missed: S.fixQ.map(function (k) { return S.words[k].raw; }) };
+      S.fullRead = true; S.fi = 0; S.tries = {}; S.heardW = {}; S.hard = {};
+      render(); save();
+    }
+    if (S.fixQ.length) {
+      if (S.fi === 0) await teach(r, PH.fix);
+      for (; S.fi < S.fixQ.length; S.fi++) await wordTurn(r, S.fixQ[S.fi], "full");
+      S.log.fix = wordsLog(S.fixQ);
+    } else S.log.fix = { first: 0, list: [] };
+    S.step = 4; save();
+  }
+  if (S.step === 4) {
+    render();
+    var blob = await recordTurn(r);
+    check(r);
+    var hardN = S.log.words.list.concat(S.log.fix.list).filter(function (o) { return o.hard; }).length, ratio = S.log.full.ok / n;
+    S.stars = (ratio >= 0.9 && !hardN) ? 3 : (ratio >= 0.7 ? 2 : 1);
+    S.step = 5; S.target = -1;
+    setTurn("teacher"); render();
+    finish(blob);
+    try { if (WAKE) WAKE.release(); } catch (e) {} WAKE = null;
+    await teach(r, PH.done);
+  }
+}
+
+/* the last reading is recorded for the parents; listening is off while the recorder runs */
+async function recordTurn(r) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) return null;
+  await teach(r, PH.rec);
+  var stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { return null; }
+  var mr, chunks = [], ctx = null, an = null, buf = null, spoke = false;
+  try { mr = new MediaRecorder(stream); } catch (e) { stream.getTracks().forEach(function (t) { t.stop(); }); return null; }
+  mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+  try {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    an = ctx.createAnalyser(); an.fftSize = 1024;
+    ctx.createMediaStreamSource(stream).connect(an);
+    buf = new Uint8Array(an.fftSize);
+  } catch (e) { an = null; }
+  S.recDone = false; S.coach = "اقرأ النص كله بصوت واضح. أتوقف وحدي عندما تسكت."; setTurn("rec"); render();
+  await new Promise(function (res) {
+    var t0 = Date.now(), quiet = 0, maxMs = Math.min(180000, 20000 + S.words.length * 2500);
+    mr.onstop = res;
+    try { mr.start(); } catch (e) { res(); return; }
+    var iv = setInterval(function () {
+      var elp = Date.now() - t0, loud = false;
+      if (an) {
+        an.getByteTimeDomainData(buf);
+        var s = 0; for (var k = 0; k < buf.length; k++) s += Math.abs(buf[k] - 128);
+        loud = s / buf.length > 3;
+      }
+      if (loud) { spoke = true; quiet = 0; } else quiet += 200;
+      if (r !== RUN || S.recDone || elp > maxMs || (an && spoke && quiet >= 4000) || (an && !spoke && elp > 15000)) {
+        clearInterval(iv);
+        try { mr.stop(); } catch (e) { res(); }
+      }
+    }, 200);
+  });
+  stream.getTracks().forEach(function (t) { t.stop(); });
+  try { if (ctx) ctx.close(); } catch (e) {}
+  if (r !== RUN) throw STOP;
+  var blob = new Blob(chunks, { type: mr.mimeType || "audio/webm" });
+  return (blob.size > 3000 && (spoke || !an)) ? blob : null;
+}
+function payload() {
+  return { id: S.id, taskId: S.taskId, sample: S.sample, title: S.title, lang: S.lang, startedAt: S.startedAt,
+           status: S.step >= 5 ? "done" : "started", step: ["listen", "words", "sents", "full", "rec", "done"][Math.min(S.step, 5)],
+           stars: S.stars, total: S.words.length,
+           log: { total: S.words.length, sentences: S.sents.length, words: S.log.words || null, sents: S.log.sents || null,
+                  full: S.log.full || null, fix: S.log.fix || null, heard: S.log.heard } };
+}
+function save() {
+  var me = S, p = payload();
+  me.saveP = (me.saveP || Promise.resolve()).then(function () { return api("apiSaveSession", p); }).then(noop, function () { me.saveErr = true; });
+  return me.saveP;
+}
+function finish(blob) {
+  var me = S;
+  me.saving = "أحفظ الدرس…"; render();
+  save().then(function () {
+    if (!blob) return null;
+    me.saving = "أحفظ التسجيل…"; if (me === S) render();
+    return new Promise(function (res) {
+      var fr = new FileReader();
+      fr.onload = function () { res(String(fr.result).split(",")[1] || ""); };
+      fr.onerror = function () { res(""); };
+      fr.readAsDataURL(blob);
+    }).then(function (b64) { return b64 ? api("apiSaveRecording", me.id, b64, blob.type) : null; });
+  }).then(function (res) {
+    me.saving = me.saveErr ? "لم يُحفظ الدرس. تأكد من الاتصال." : (blob ? (res && res.ok ? "حُفظ الدرس والتسجيل." : "حُفظ الدرس. التسجيل لم يُحفظ.") : "حُفظ الدرس بدون تسجيل صوتي.");
+    if (me === S) render();
+  }, function () { me.saving = "حُفظ الدرس. التسجيل لم يُحفظ."; if (me === S) render(); });
+}
+
+/* ---------- the parents' side ---------- */
+function wordLine(o) {
+  var li = el("li", { dir: "auto", text: String(o.w || "") + " · " + (o.hard ? "لم تُسمع صحيحة بعد " + MAX_TRIES + " محاولات" : o.tries + " محاولة خاطئة ثم صحّت") });
+  if (o.heard && o.heard.length) li.appendChild(el("div", { "class": "said", dir: "auto", text: "سمع التطبيق: " + o.heard.join(" / ") }));
+  return li;
+}
+function sessionEntry(s) {
+  var done = s.status === "done", L = s.log || {}, total = L.total || 0;
+  var d = el("details", { "class": "sess" });
+  if (OPEN[s.id]) d.setAttribute("open", "");
+  d.addEventListener("toggle", function () { OPEN[s.id] = d.open; });
+  d.appendChild(el("summary", {}, [
+    el("span", { dir: "auto", text: s.title || "نص" }),
+    el("span", { "class": "pill" + (done ? " done" : ""), text: done ? "تمّت · " + (s.stars || 0) + " نجوم" : "لم تكتمل، توقف عند: " + (STEP_AR[s.step] || "البداية") }),
+    el("span", { "class": "when", text: when(s.startedAt) + (s.updatedAt && s.startedAt ? " · " + Math.max(1, Math.round((s.updatedAt - s.startedAt) / 60000)) + " د" : "") })
+  ]));
+  if (s.recording && /^https:\/\//.test(s.recording)) {
+    d.appendChild(el("p", {}, [el("a", { href: s.recording, target: "_blank", rel: "noopener", text: "استمع إلى تسجيل القراءة" })]));
+  }
+  var ul;
+  if (L.words) {
+    d.appendChild(el("h4", { text: "كلمة كلمة" }));
+    d.appendChild(el("p", { text: L.words.first + " من " + total + " كلمة صحيحة من أول مرة." }));
+    if (L.words.list && L.words.list.length) { ul = el("ul"); L.words.list.forEach(function (o) { ul.appendChild(wordLine(o)); }); d.appendChild(ul); }
+  }
+  if (L.sents) {
+    d.appendChild(el("h4", { text: "جملة جملة" }));
+    d.appendChild(el("p", { text: L.sents.first + " من " + (L.sentences || 0) + " جملة صحيحة من أول مرة." }));
+    if (L.sents.list && L.sents.list.length) {
+      ul = el("ul");
+      L.sents.list.forEach(function (o) { ul.appendChild(el("li", { dir: "auto", text: String(o.s || "") + " · " + (o.passed ? o.tries + " محاولات" : "لم تكتمل بعد " + MAX_TRIES + " محاولات (" + o.ok + " من " + o.n + " كلمة)") })); });
+      d.appendChild(ul);
+    }
+  }
+  if (L.full) {
+    d.appendChild(el("h4", { text: "النص كاملاً" }));
+    d.appendChild(el("p", { text: L.full.ok + " من " + total + " كلمة قرأها وحده." + (L.full.missed && L.full.missed.length ? " أعادها مع المعلّم: " + L.full.missed.join("، ") : "") }));
+    if (L.fix && L.fix.list && L.fix.list.length) { ul = el("ul"); L.fix.list.forEach(function (o) { ul.appendChild(wordLine(o)); }); d.appendChild(ul); }
+  }
+  var h = L.heard || {};
+  if (h.words || h.sents || h.full) {
+    d.appendChild(el("h4", { text: "نص ما سمعه التطبيق" }));
+    if (h.words) d.appendChild(el("p", { "class": "said", dir: "auto", text: "كلمة كلمة: " + h.words }));
+    if (h.sents) d.appendChild(el("p", { "class": "said", dir: "auto", text: "جملة جملة: " + h.sents }));
+    if (h.full) d.appendChild(el("p", { "class": "said", dir: "auto", text: "النص كاملاً: " + h.full }));
+  }
+  return d;
+}
+function renderParent() {
+  $("pinPanel").hidden = !!LOG;
+  $("parentBody").hidden = !LOG;
+  if (!LOG) return;
+  var mini = $("taskMini"); mini.textContent = "";
+  var tasks = (LOG.tasks || []).slice().reverse();
+  tasks.forEach(function (t) {
+    var del = el("button", { "class": "btn small", type: "button", text: "حذف" });
+    del.addEventListener("click", function () {
+      if (del.dataset.sure !== "1") { del.dataset.sure = "1"; del.textContent = "اضغط مرة ثانية للحذف"; del.className = "btn small danger"; return; }
+      del.disabled = true;
+      api("apiDeleteTask", PIN, t.id).then(loadLog, function (e) { $("logMsg").textContent = errText(e); });
+    });
+    mini.appendChild(el("li", {}, [
+      el("span", { dir: "auto", text: t.title || "نص" }),
+      el("span", { "class": "pill" + (t.done ? " done" : ""), text: t.done ? "تمّت" : "لم تُنجز بعد" }),
+      el("span", { "class": "gap" }), del
+    ]));
+  });
+  if (!tasks.length) mini.appendChild(el("li", {}, [el("span", { "class": "hint", text: "لا توجد وظائف بعد." })]));
+  var dl = $("deviceList"); dl.textContent = "";
+  (LOG.devices || []).forEach(function (d) {
+    var rv = el("button", { "class": "btn small", type: "button", text: "إلغاء الربط" });
+    rv.addEventListener("click", function () {
+      if (rv.dataset.sure !== "1") { rv.dataset.sure = "1"; rv.textContent = "اضغط مرة ثانية للإلغاء"; rv.className = "btn small danger"; return; }
+      rv.disabled = true;
+      api("apiRevoke", PIN, d.id).then(loadLog, function (e) { $("logMsg").textContent = errText(e); });
+    });
+    dl.appendChild(el("li", {}, [
+      el("span", { dir: "auto", text: d.name || "جهاز" }),
+      el("span", { "class": "when", text: "رُبط " + when(d.created) }),
+      el("span", { "class": "gap" }), rv
+    ]));
+  });
+  if (!(LOG.devices || []).length) dl.appendChild(el("li", {}, [el("span", { "class": "hint", text: "لا توجد أجهزة." })]));
+  var box = $("sessionList"); box.textContent = "";
+  (LOG.sessions || []).forEach(function (s) { box.appendChild(sessionEntry(s)); });
+  $("logMsg").textContent = (LOG.sessions || []).length ? "" : "لا يوجد سجل بعد. يظهر هنا كل درس يبدؤه " + CHILD + ".";
+}
+function loadLog() {
+  $("logMsg").textContent = "أحمّل السجل…";
+  return api("apiLog", PIN).then(function (res) {
+    if (!res || !res.ok) { LOG = null; $("pinMsg").textContent = "الرقم غير صحيح."; renderParent(); return; }
+    LOG = res; renderParent();
+  }, function (e) {
+    if (e && (e.message === "badpin" || e.message === "locked")) { LOG = null; PIN = ""; renderParent(); }
+    $("pinMsg").textContent = errText(e); $("logMsg").textContent = errText(e);
+  });
+}
+
+/* ---------- wiring ---------- */
+$("tab-home").addEventListener("click", function () { show("home"); });
+$("tab-parent").addEventListener("click", function () { show("parent"); });
+$("pinGo").addEventListener("click", function () { PIN = $("pinIn").value.trim(); $("pinMsg").textContent = "لحظة…"; loadLog().then(function () { if (LOG) { $("pinIn").value = ""; $("pinMsg").textContent = ""; } }); });
+$("logRefresh").addEventListener("click", loadLog);
+var pairing = false;
+$("pairGo").addEventListener("click", function () {
+  if (pairing) return;
+  var pin = $("pairPin").value.trim(), name = $("pairName").value.trim() || "جهاز";
+  if (!pin) { $("pairMsg").textContent = "اكتب رقم الأهل."; return; }
+  pairing = true; $("pairMsg").textContent = "لحظة…";
+  api("pair", pin, name.slice(0, 40)).then(function (res) {
+    TOKEN = String((res && res.token) || "");
+    try { localStorage.setItem("iqra-token", TOKEN); } catch (e) {}
+    $("pairPin").value = ""; $("pairMsg").textContent = "";
+    show("home");
+  }, function (e) { $("pairMsg").textContent = errText(e); }).then(function () { pairing = false; });
+});
+var sending = false;
+$("ownSend").addEventListener("click", function () {
+  if (sending) return;
+  var txt = $("ownText").value.trim(), lang = $("ownLang").value, msg = $("ownMsg");
+  if (tokens(txt, lang).length < 3) { msg.textContent = "اكتب نصاً من ثلاث كلمات على الأقل."; return; }
+  var title = $("ownTitle").value.trim() || (lang === "ar" ? "نص الدرس" : (lang === "tr" ? "Ders metni" : "Lesson text"));
+  sending = true; msg.textContent = "أضيف الوظيفة…";
+  api("apiAddTask", PIN, { title: title.slice(0, 80), lang: lang, text: txt.slice(0, 4000) }).then(function (res) {
+    if (!res || !res.ok) { msg.textContent = "لم تُضف الوظيفة."; return; }
+    $("ownText").value = ""; $("ownTitle").value = "";
+    msg.textContent = "أُضيفت. تظهر في «وظائف " + CHILD + "».";
+    return loadLog();
+  }, function (e) { msg.textContent = errText(e); }).then(function () { sending = false; });
+});
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden && S && VIEW === "lesson" && S.step < 5 && !S.paused) pause("توقف الدرس لأن الصفحة أُغلقت. اضغط «تابع».");
+});
+show("home");
+</script>
+</body>
+</html>
