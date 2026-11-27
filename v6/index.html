@@ -826,19 +826,24 @@ function earListen(lang, words, onText, maxMs) {
         if (stopping) return; stopping = true; EAR_LAST = performance.now();
         if (EAR.rec === rec) EAR.rec = null;
         try { rec.retrieveFinalResult(); } catch (e) { fin(); return; }
-        late = setTimeout(fin, 900);
+        late = setTimeout(fin, 2000);        // safety only: the last result normally comes in well under a second
       },
       abort: function () { fin(); }
     };
     rec.on("result", function (msg) {
       var ws = ((msg.result && msg.result.result) || []).filter(function (w) {
         if (w.word === "[unk]") return false;
-        if (drop[w.word] && w.start < tEnd) { drop[w.word]--; return false; }   // the teacher's voice
+        /* the teacher's voice: a word the teacher just said that began well before the teacher stopped
+           (the 0.2 s allows for the teacher's "end" being reported late; on phones the teacher's voice is
+           often removed from the microphone, and then a quick child must not lose his word) */
+        if (drop[w.word] && w.start < tEnd - 0.2) { drop[w.word]--; return false; }
         return w.conf >= need;
       }).map(function (w) { return w.word; });
       if (ws.length) finals.push(ws.join(" "));
       if (onText) onText(said(), true);
-      if (stopping) fin();
+      /* after stop, the model may still be working through sound it had not finished: the final answer is
+         the last result, so wait a moment after each one */
+      if (stopping) { clearTimeout(late); late = setTimeout(fin, 250); }
     });
     rec.on("partialresult", function (msg) {
       var p = String((msg.result && msg.result.partial) || "").replace(/\[unk\]/g, " ").replace(/\s+/g, " ").trim();
