@@ -623,7 +623,7 @@ function speak(text, lang, rate) {
     var v = pickVoice(lang); if (v) u.voice = v;
     var fin = function () { if (done) return; done = true; clearTimeout(t); UTT = null; SPK.t1 = performance.now(); res(); };
     u.onend = fin; u.onerror = fin;
-    SPK.t0 = performance.now(); SPK.t1 = SPK.t0 + 60000;
+    SPK.t0 = performance.now(); SPK.t1 = SPK.t0 + 60000; SPK.text = text; SPK.lang = lang;
     u.onstart = function () { SPK.t0 = performance.now(); };
     var t = setTimeout(fin, 2500 + text.length * 150 / r);   // some phones never report the end
     UTT = u;                                                  // keep it alive until it has been spoken
@@ -690,12 +690,13 @@ var EAR_MODEL = {
   tr: "https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-tr-0.3.tar.gz"
 };
 var EAR = { lib: null, model: null, lang: "", loading: {}, state: {}, pct: {}, rec: null };
-/* The last seconds of the microphone are always kept, so the child's turn can start while the teacher
-   is still speaking: the turn takes the sound from shortly after the teacher began. Words heard there
-   count only if they end after the teacher has finished, so the teacher's own voice is never taken
-   for the child's. */
-var RING = [], SPK = { t0: 0, t1: 0 }, EAR_LAST = 0;
-var PRE_ROLL_MS = 1500, PRE_SKIP_MS = 250, AFTER_TEACHER_S = 0.12;
+/* The last seconds of the microphone are always kept, so the child's turn starts while the teacher is
+   still speaking: the turn takes the sound from the teacher's last words (at most 1.5 s back).
+   The ear gives every word its own time, so the teacher's voice and the child's come out as separate
+   words: the first time a word the teacher just said is heard, before the teacher stopped, it is the
+   teacher, and it is dropped. Every later one is the child's. */
+var RING = [], SPK = { t0: 0, t1: 0, text: "", lang: "" }, EAR_LAST = 0;
+var PRE_ROLL_MS = 1500;
 function earLang(lang) { return lang === "en" || lang === "tr"; }
 function earReady(lang) { return EAR.lang === lang && !!EAR.model && !!MICS && !!MICS.ctx; }
 function earLib() {
@@ -795,15 +796,22 @@ function earListen(lang, words, onText, maxMs) {
     } catch (e) { res(null); return; }
     var need = LEVELS[LVL].conf;
     var said = function () { return finals.join(" ").trim(); };
-    /* the sound from shortly after the teacher began (at most 1.5 s back), never what an earlier turn used */
-    var from = Math.max(SPK.t0 + PRE_SKIP_MS, SPK.t1 - PRE_ROLL_MS, EAR_LAST), first = 0, sr = MICS.ctx.sampleRate;
+    /* the sound from the teacher's last words (at most 1.5 s back), never what an earlier turn used */
+    var from = Math.max(SPK.t0 - 100, SPK.t1 - PRE_ROLL_MS, EAR_LAST), first = 0, sr = MICS.ctx.sampleRate;
     RING.forEach(function (c) {
       if (c.t + 20 < from) return;
       if (!first) first = c.t;
       try { rec.acceptWaveformFloat(c.d, sr); } catch (e) {}
     });
     if (!first) first = performance.now();
-    var cut = (SPK.t1 - first) / 1000 + AFTER_TEACHER_S;      // seconds into this turn when the teacher stopped
+    var tEnd = (SPK.t1 - first) / 1000;                        // seconds into this turn when the teacher stopped
+    /* the teacher's words that fall inside that sound: each will be heard once in the teacher's voice */
+    var drop = {};
+    if (SPK.lang === lang && tEnd > 0) {
+      var tw = String(SPK.text).split(/\s+/).map(function (w) { return earWord(w, lang); }).filter(Boolean);
+      var dur = Math.max(0.3, (SPK.t1 - SPK.t0) / 1000), inWin = Math.min(1, (SPK.t1 - Math.max(from, SPK.t0)) / 1000 / dur);
+      tw.slice(Math.max(0, tw.length - Math.ceil(inWin * tw.length) - 1)).forEach(function (w) { drop[w] = (drop[w] || 0) + 1; });
+    }
     var fin = function () {
       if (done) return; done = true;
       clearTimeout(timer); clearTimeout(late);
@@ -823,8 +831,11 @@ function earListen(lang, words, onText, maxMs) {
       abort: function () { fin(); }
     };
     rec.on("result", function (msg) {
-      var ws = ((msg.result && msg.result.result) || []).filter(function (w) { return w.word !== "[unk]" && w.conf >= need && w.end > cut; })
-        .map(function (w) { return w.word; });
+      var ws = ((msg.result && msg.result.result) || []).filter(function (w) {
+        if (w.word === "[unk]") return false;
+        if (drop[w.word] && w.start < tEnd) { drop[w.word]--; return false; }   // the teacher's voice
+        return w.conf >= need;
+      }).map(function (w) { return w.word; });
       if (ws.length) finals.push(ws.join(" "));
       if (onText) onText(said(), true);
       if (stopping) fin();
