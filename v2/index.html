@@ -280,6 +280,16 @@ details.sess a{color:var(--pen);font-weight:800}
       </section>
 
       <section class="panel">
+        <h2>مستوى التصحيح</h2>
+        <p class="hint">«سهل» يقبل النطق القريب ولو لم يكن كاملاً، ويعطي محاولتين لكل كلمة. «دقيق» يطلب نطقاً أوضح. يُحفظ على هذا الجهاز.</p>
+        <div class="row">
+          <button class="chip" id="lvl-easy" type="button">سهل</button>
+          <button class="chip" id="lvl-medium" type="button">متوسط</button>
+          <button class="chip" id="lvl-strict" type="button">دقيق</button>
+        </div>
+      </section>
+
+      <section class="panel">
         <h2>الوظائف</h2>
         <ul class="tasksmini" id="taskMini"></ul>
       </section>
@@ -306,7 +316,7 @@ details.sess a{color:var(--pen);font-weight:800}
 "use strict";
 /* ---------- settings ---------- */
 var CHILD = "عبدالله";
-var MAX_WORDS = 100, MAX_TRIES = 3;
+var MAX_WORDS = 100, MAX_TRIES = 2;
 var LOCALE = { ar: "ar-SA", en: "en-US", tr: "tr-TR" };
 var LANG_OWN = { ar: "العربية", en: "English", tr: "Türkçe" };
 var STEP_AR = { listen: "الاستماع", words: "كلمة كلمة", sents: "جملة جملة", full: "النص كاملاً", rec: "التسجيل", done: "النهاية" };
@@ -373,15 +383,46 @@ var SOUNDALIKE = {};
 "high hi|sky ski|two to too|red read|there their|sea see|son sun|blue blew|one won|eight ate|right write|know no|here hear|by buy bye|for four|eye i|night knight|tail tale|flour flower|pear pair bear|meet meat|week weak|wood would|ball bowl|cat kat|sam some sum|dog doug".split("|").forEach(function (g) {
   var ws = g.split(" "); ws.forEach(function (w) { SOUNDALIKE[w] = ws; });
 });
+/* How strict the teacher is. The parents choose it; "easy" is the default for a young reader. */
+var LEVELS = {
+  easy:   { name: "سهل",   tries: 2, need: 0.6 },
+  medium: { name: "متوسط", tries: 3, need: 0.8 },
+  strict: { name: "دقيق",  tries: 3, need: 0.9 }
+};
+var LVL = "easy";
+try { var lv0 = localStorage.getItem("iqra-level"); if (LEVELS[lv0]) LVL = lv0; } catch (e) {}
+MAX_TRIES = LEVELS[LVL].tries;
+function setLevel(k) {
+  if (!LEVELS[k]) return;
+  LVL = k; MAX_TRIES = LEVELS[k].tries;
+  try { localStorage.setItem("iqra-level", k); } catch (e) {}
+  ["easy", "medium", "strict"].forEach(function (x) { var b = $("lvl-" + x); if (b) b.setAttribute("aria-pressed", String(x === k)); });
+}
+/* English the way a young Arabic or Turkish speaker often says it: "da" for "the", "hay" for "high". */
+function accentKey(s) {
+  return s.replace(/th/g, "d").replace(/igh/g, "ai").replace(/ph/g, "f").replace(/ck/g, "k").replace(/wh/g, "w")
+    .replace(/c(?=[aou])/g, "k").replace(/ies$/, "ais").replace(/(ay|ey|ei)/g, "ai").replace(/(ee|ea|ie)/g, "i")
+    .replace(/oo/g, "u").replace(/y$/, "i").replace(/(.)\1/g, "$1").replace(/e$/, "").replace(/z$/, "s");
+}
 function same(spoken, target) {
   if (spoken === target) return true;
   if (!spoken || !target) return false;
   if (CUR_LANG === "en" && SOUNDALIKE[target] && SOUNDALIKE[target].indexOf(spoken) >= 0) return true;
-  var L = target.length, d = lev(spoken, target);
-  if (L <= 2) return spoken.length <= 3 && spoken[0] === target[0] && d <= 1;
-  if (L <= 4) return d <= 1 || (d <= 2 && spoken[0] === target[0] && spoken[spoken.length - 1] === target[L - 1] && Math.abs(spoken.length - L) <= 1);
+  var L = target.length, d = lev(spoken, target), first = spoken[0] === target[0], last = spoken[spoken.length - 1] === target[L - 1];
+  if (LVL === "strict") return L <= 3 ? false : d <= 1;
+  if (LVL === "easy") {
+    if (CUR_LANG === "en") { var ka = accentKey(spoken), kb = accentKey(target); if (ka === kb || (kb.length >= 2 && lev(ka, kb) <= 1) || (kb.length === 1 && ka.length <= 2 && ka[0] === kb)) return true; }
+    if (L <= 2) return d <= 1 || (first && spoken.length <= 3);
+    if (L <= 4) return d <= 1 || (d <= 2 && (first || last) && Math.abs(spoken.length - L) <= 2);
+    if (d <= 2 || (first && d <= Math.ceil(L / 2.5))) return true;
+    if (CUR_LANG === "en" && first && soundex(spoken) === soundex(target)) return true;
+    if (spoken.indexOf(target) === 0 || (target.indexOf(spoken) === 0 && spoken.length >= L - 2)) return true;
+    return false;
+  }
+  if (L <= 2) return spoken.length <= 3 && first && d <= 1;
+  if (L <= 4) return d <= 1 || (d <= 2 && first && last && Math.abs(spoken.length - L) <= 1);
   if (d <= Math.max(2, Math.floor(L / 3))) return true;
-  if (CUR_LANG === "en" && spoken[0] === target[0] && soundex(spoken) === soundex(target)) return true;
+  if (CUR_LANG === "en" && first && soundex(spoken) === soundex(target)) return true;
   if (spoken.length > L && spoken.indexOf(target) === 0) return true;      // "kites" for "kite"
   return false;
 }
@@ -649,9 +690,17 @@ function judge(blob, a, b) {
     if (!b64) return null;
     return api("apiJudge", b64, blob.type || "audio/webm", me.lang, target);
   }).then(function (res) {
-    if (!res || !Array.isArray(res.words)) return null;
+    if (!res || typeof res.heard !== "string") return null;
     if (me.log) me.log.ai = (me.log.ai || 0) + 1;
-    return res.words.map(function (x) { return x === true; });
+    var heard = res.heard.trim();
+    if (heard) { heardLog(me.step === 2 ? "sents" : (me.step === 3 ? "full" : "words"), "[AI] " + heard); me.heard = heard; }
+    /* compare what the AI teacher really heard with the text, using the same kind rules */
+    var toks = tokens(heard, me.lang), words = me.words.slice(a, b);
+    var st = { ptr: 0, status: words.map(function () { return "todo"; }) };
+    align(toks, words, st);
+    return words.map(function (w, k) {
+      return st.status[k] === "ok" || toks.some(function (x) { return same(x, w.norm); });
+    });
   }, function (e) {
     if (e && /^ai_(off|key|limit)/.test(e.message || "")) AIOK = false;
     return null;
@@ -1011,7 +1060,7 @@ async function readRange(r, a, b) {
   return okCount(st);
 }
 async function sentenceTurn(r, si) {
-  var a = S.sents[si].a, b = S.sents[si].b, need = Math.ceil((b - a) * 0.8), got = 0;
+  var a = S.sents[si].a, b = S.sents[si].b, need = Math.max(1, Math.ceil((b - a) * LEVELS[LVL].need)), got = 0;
   for (var t = 1; t <= MAX_TRIES; t++) {
     for (var j = a; j < b; j++) S.status[j] = "todo";
     S.coach = "اسمع الجملة، ثم أعدها."; paint();
@@ -1133,7 +1182,7 @@ function payload() {
   return { id: S.id, taskId: S.taskId, sample: S.sample, title: S.title, lang: S.lang, startedAt: S.startedAt,
            status: S.step >= 5 ? "done" : "started", step: ["listen", "words", "sents", "full", "rec", "done"][Math.min(S.step, 5)],
            stars: S.stars, total: S.words.length,
-           log: { total: S.words.length, sentences: S.sents.length, ai: S.log.ai || 0, words: S.log.words || null, sents: S.log.sents || null,
+           log: { total: S.words.length, sentences: S.sents.length, ai: S.log.ai || 0, level: LVL, words: S.log.words || null, sents: S.log.sents || null,
                   full: S.log.full || null, fix: S.log.fix || null, heard: S.log.heard } };
 }
 function save() {
@@ -1198,6 +1247,7 @@ function sessionEntry(s) {
     d.appendChild(el("p", { text: L.full.ok + " من " + total + " كلمة قرأها وحده." + (L.full.missed && L.full.missed.length ? " أعادها مع المعلّم: " + L.full.missed.join("، ") : "") }));
     if (L.fix && L.fix.list && L.fix.list.length) { ul = el("ul"); L.fix.list.forEach(function (o) { ul.appendChild(wordLine(o)); }); d.appendChild(ul); }
   }
+  if (L.level && LEVELS[L.level]) d.appendChild(el("p", { "class": "said", text: "مستوى التصحيح: " + LEVELS[L.level].name }));
   if (L.ai) d.appendChild(el("p", { "class": "said", text: "المعلّم الذكي أعاد الاستماع " + L.ai + " مرة." }));
   var h = L.heard || {};
   if (h.words || h.sents || h.full) {
@@ -1264,6 +1314,8 @@ $("tab-home").addEventListener("click", function () { show("home"); });
 $("tab-parent").addEventListener("click", function () { show("parent"); });
 $("pinGo").addEventListener("click", function () { PIN = $("pinIn").value.trim(); $("pinMsg").textContent = "لحظة…"; loadLog().then(function () { if (LOG) { $("pinIn").value = ""; $("pinMsg").textContent = ""; } }); });
 $("logRefresh").addEventListener("click", loadLog);
+["easy", "medium", "strict"].forEach(function (k) { $("lvl-" + k).addEventListener("click", function () { setLevel(k); }); });
+setLevel(LVL);
 var pairing = false;
 $("pairGo").addEventListener("click", function () {
   if (pairing) return;
